@@ -3,9 +3,26 @@ import tensorflow as tf
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from fastapi.middleware.cors import CORSMiddleware
+# uvicorn main:app --reload
 MODEL = tf.keras.models.load_model('model/')
 
 app = FastAPI()
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class UserInput(BaseModel):
     radius_mean: float
@@ -43,7 +60,7 @@ class UserInput(BaseModel):
 async def index():
     return {"Message": "This is Index"}
 
-@app.get('/predict/', tags=["predict"])
+@app.post('/predict/', tags=["predict"])
 async def predict(data: UserInput):
     data=data.dict()
     radius_mean=data['radius_mean']
@@ -86,7 +103,7 @@ async def predict(data: UserInput):
        smoothness_worst, compactness_worst, concavity_worst,
        concave_points_worst, symmetry_worst,
        fractal_dimension_worst]])
-
+    
     if(prediction[0]>0.5):
         output="Malignant"
     else:
