@@ -3,8 +3,6 @@ import tensorflow as tf
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-import numpy as np
-
 MODEL = tf.keras.models.load_model('model/')
 
 app = FastAPI()
