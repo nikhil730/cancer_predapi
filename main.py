@@ -43,7 +43,7 @@ class UserInput(BaseModel):
 async def index():
     return {"Message": "This is Index"}
 
-@app.post('/predict/')
+@app.get('/predict/', tags=["predict"])
 async def predict(data: UserInput):
     data=data.dict()
     radius_mean=data['radius_mean']
