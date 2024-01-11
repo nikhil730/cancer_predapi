@@ -1,11 +1,15 @@
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
 import tensorflow as tf
-
 from fastapi import FastAPI
 from pydantic import BaseModel
+import numpy
 
 from fastapi.middleware.cors import CORSMiddleware
 # uvicorn main:app --reload
-MODEL = tf.keras.models.load_model('model/')
+model_dir="model/"
+MODEL = tf.saved_model.load(model_dir)
+infer = MODEL.signatures["serving_default"]
 
 app = FastAPI()
 
@@ -93,18 +97,32 @@ async def predict(data: UserInput):
     concave_points_worst=data['concave_points_worst']
     symmetry_worst=data['symmetry_worst']
     fractal_dimension_worst=data['fractal_dimension_worst']
-    prediction = MODEL.predict([[radius_mean, texture_mean, perimeter_mean, area_mean,
-       smoothness_mean, compactness_mean, concavity_mean,
-       concave_points_mean, symmetry_mean, fractal_dimension_mean,
-       radius_se, texture_se, perimeter_se, area_se,
-       smoothness_se, compactness_se, concavity_se,
-       concave_points_se, symmetry_se, fractal_dimension_se,
-       radius_worst, texture_worst, perimeter_worst, area_worst,
-       smoothness_worst, compactness_worst, concavity_worst,
-       concave_points_worst, symmetry_worst,
-       fractal_dimension_worst]])
-    
-    if(prediction[0]>0.5):
+    # prediction = MODEL([[radius_mean, texture_mean, perimeter_mean, area_mean,
+    #    smoothness_mean, compactness_mean, concavity_mean,
+    #    concave_points_mean, symmetry_mean, fractal_dimension_mean,
+    #    radius_se, texture_se, perimeter_se, area_se,
+    #    smoothness_se, compactness_se, concavity_se,
+    #    concave_points_se, symmetry_se, fractal_dimension_se,
+    #    radius_worst, texture_worst, perimeter_worst, area_worst,
+    #    smoothness_worst, compactness_worst, concavity_worst,
+    #    concave_points_worst, symmetry_worst,
+    #    fractal_dimension_worst]])
+    input_tensor = tf.constant([[radius_mean, texture_mean, perimeter_mean, area_mean,
+                            smoothness_mean, compactness_mean, concavity_mean,
+                            concave_points_mean, symmetry_mean, fractal_dimension_mean,
+                            radius_se, texture_se, perimeter_se, area_se,
+                            smoothness_se, compactness_se, concavity_se,
+                            concave_points_se, symmetry_se, fractal_dimension_se,
+                            radius_worst, texture_worst, perimeter_worst, area_worst,
+                            smoothness_worst, compactness_worst, concavity_worst,
+                            concave_points_worst, symmetry_worst,
+                            fractal_dimension_worst]])
+    prediction = infer(input_tensor)
+    result=prediction["output_0"][0][0].numpy()
+    print(prediction["output_0"][0][0].numpy())
+    #result = prediction
+    #return 0
+    if(result>0.5):
         output="Malignant"
     else:
         output="benign"
